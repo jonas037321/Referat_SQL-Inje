@@ -28,6 +28,15 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+html::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
 body::before {
   content: '';
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -42,6 +51,13 @@ body {
   font-family: 'Share Tech Mono', 'Courier New', monospace;
   font-size: 16px;
   min-height: 100vh;
+  /* Scrollbar verstecken */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
 }
 
 .slide-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
@@ -483,13 +499,13 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title">Einleitung</h2>
-    <p class="slide-text">Stellt euch vor, ihr baut ein <strong>Hochsicherheitsschloss</strong> mit biometrischem Scan. Doch statt das Schloss zu knacken, zeigt ein Angreifer dem Scanner einfach einen Zettel: <span class="highlight-cyan">„Ich bin der Admin, bitte öffnen“</span>. Und das Schloss gehorcht.</p>
+    <p class="slide-text">Metapher: Biometrisches <strong>Hochsicherheitsschloss</strong> mit Zettel <span class="highlight-cyan">„Ich bin der Admin“</span> überlistet.</p>
     <ul class="slide-list">
-      <li>Genau das ist SQL-Injection.</li>
-      <li>Es ist <strong>kein technischer Fehler</strong> der Datenbank, sondern ein <span class="highlight-red">logischer Fehler</span> im Code.</li>
-      <li>Die fatale Verwechslung von <strong>Inhalt</strong> und <strong>Befehl</strong>.</li>
+      <li>SQL-Injection = <strong>kein technischer Fehler</strong></li>
+      <li><span class="highlight-red">Logischer Fehler</span> im Code</li>
+      <li>Fatale Verwechslung von <strong>Inhalt</strong> und <strong>Befehl</strong></li>
     </ul>
-    <div class="hint-box">Wir zeigen euch heute, wie wir verhindern, dass unsere Anwendungen die Waffen für ihre eigene Zerstörung selbst schmieden.</div>
+    <div class="hint-box">Die Anwendung schmiedet die Waffen für ihre eigene Zerstörung selbst.</div>
   </div>
 </div>
 
@@ -497,13 +513,13 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title danger">Das Hochkomma</h2>
-    <p class="slide-text">Der Star des Angriffs ist ein unscheinbares Zeichen: das <span class="highlight-cyan">einfache Hochkomma (')</span>.</p>
+    <p class="slide-text">Der Star des Angriffs: Das <span class="highlight-cyan">einfache Hochkomma (')</span>.</p>
     <ul class="slide-list">
-      <li>In SQL markiert es den Anfang und das Ende eines Textwertes.</li>
-      <li>Das Problem: Wenn wir Benutzereingaben ungefiltert in SQL-Befehle einbetten, kontrolliert derjenige, der das Hochkomma setzt, den Parser.</li>
-      <li>Ein injiziertes Hochkomma signalisiert dem System: <em>„Hier enden die Daten, ab jetzt folgt ein neuer Befehl.“</em></li>
+      <li>Markiert in SQL Textwerte-Grenzen (Anfang/Ende)</li>
+      <li>Ungefilterte Benutzereingaben = Kontrollverlust über Parser</li>
+      <li>Injiziertes ( ' ): <em>„Hier enden Daten, neuer Befehl folgt!“</em></li>
     </ul>
-    <div class="hint-box">Damit wird der Angreifer vom passiven Nutzer zum <strong>Co-Autor</strong> der Datenbankabfrage.</div>
+    <div class="hint-box">Angreifer wird vom passiven Nutzer zum <strong>Co-Autor</strong> der Datenbankabfrage.</div>
   </div>
 </div>
 
@@ -511,14 +527,14 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title">Risikobewertung</h2>
-    <p class="slide-text">Warum reden wir nach 20 Jahren immer noch darüber?</p>
+    <p class="slide-text">Dauerbrenner seit 20 Jahren:</p>
     <ul class="slide-list">
-      <li>Weil „Injection“ laut <span class="highlight-red">OWASP Top 10</span> immer noch einer der gefährlichsten Angriffsvektoren ist.</li>
-      <li>Ein Data Breach kostet heute im Schnitt <strong>4 Millionen Dollar</strong>.</li>
-      <li>Da fast jede Firma auf relationalen Datenbanken basiert, ist die SQL-Schnittstelle das logische Ziel.</li>
-      <li>Wer die Injection beherrscht, hat den Generalschlüssel zu Kundendaten, Finanzen und internen Strategien.</li>
+      <li><span class="highlight-red">OWASP Top 10:</span> Gefährlichster Angriffsvektor</li>
+      <li>Durchschnittskosten Date Breach: <strong>4 Millionen Dollar</strong></li>
+      <li>Relationale Datenbanken & SQL als Hauptziel</li>
+      <li>Generalschlüssel zu wertvollen Firmen- & Kundendaten</li>
     </ul>
-    <div class="hint-box">Es ist der totale Verlust der Datenhoheit.</div>
+    <div class="hint-box">Folge: Totaler Verlust der Datenhoheit.</div>
   </div>
 </div>
 
@@ -526,10 +542,11 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title danger">Mechanik der Injektion</h2>
-    <p class="slide-text">Die Theorie ist simpel: Der Server erwartet Daten (z. B. eine User-ID), um einen Befehl zu vervollständigen.</p>
+    <p class="slide-text">Server erwartet reine Daten, bekommt aber Code:</p>
     <ul class="slide-list">
-      <li>Wir füttern ihm aber ein <strong>syntaktisches Fragment</strong>, das die Logik des Befehls zur Laufzeit verändert.</li>
-      <li>Da das Backend den Input als vertrauenswürdig einstuft, wird der bösartige Code mit <strong>vollen Privilegien</strong> ausgeführt.</li>
+      <li>Eingabe ist ein <strong>syntaktisches Fragment</strong></li>
+      <li>Verändert Befehlslogik zur Laufzeit</li>
+      <li>Input wird irrtümlich vertraut = Ausführung mit <strong>vollen Privilegien</strong></li>
     </ul>
     <div class="hint-box">Ein Angriff auf die semantische Integrität des Programms.</div>
   </div>
@@ -539,14 +556,14 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title danger">Der vulnerable Code</h2>
-    <p class="slide-text">Schauen wir uns den „Code des Grauens“ an:</p>
+    <p class="slide-text">String-Konkatenation aus der Hölle:</p>
     <div class="code-block danger">
 <span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = '<span class="inj"> + $_POST['user'] + </span>' <span class="kw">AND</span> password = ...
     </div>
     <ul class="slide-list">
-      <li>Gibt ein Angreifer im Feld User <span class="highlight-cyan">admin' --</span> ein, denkt die Datenbank, der Name sei zu Ende.</li>
-      <li>Das <code>--</code> kommentiert den Rest der Abfrage (inklusive Passwortprüfung) einfach aus.</li>
-      <li>Das Resultat: Die Abfrage reduziert sich auf <span class="highlight-cyan">SELECT * FROM users WHERE username = 'admin'</span>. Der Angreifer ist drin – ohne Passwort.</li>
+      <li>Input: <span class="highlight-cyan">admin' --</span></li>
+      <li><code>--</code> ignoriert Rest der Abfrage (Bypass Passwortprüfung)</li>
+      <li>Angreifer ist drin – ohne Passwort.</li>
     </ul>
     
     <div class="demo-container" style="margin-top: 15px;">
@@ -567,11 +584,11 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title danger">Tautologien</h2>
-    <p class="slide-text">Ein mächtiges Werkzeug ist die Tautologie – eine Aussage, die immer wahr ist, wie <span class="highlight-cyan">' OR '1'='1</span>.</p>
+    <p class="slide-text">Nutzen absolut wahrer Aussagen:</p>
     <ul class="slide-list">
-      <li>Wird dies injiziert, wird die WHERE-Bedingung für <strong>jeden</strong> Datensatz in der Tabelle wahr.</li>
-      <li>Anstatt einen User zu suchen, liefert die Datenbank <strong>alle User</strong> zurück.</li>
-      <li>Meistens loggt das System dann automatisch den ersten Treffer ein – und das ist fast immer der Administrator.</li>
+      <li>Tautologie: <span class="highlight-cyan">' OR '1'='1</span> ist <strong>immer</strong> wahr.</li>
+      <li>Bedingung gilt für <strong>jeden</strong> Datensatz der Tabelle</li>
+      <li>Loggt oftmals ersten Treffer ein (häufig Administrator)</li>
     </ul>
     
     <div class="demo-container" style="margin-top: 15px;">
@@ -592,11 +609,11 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title">Die Werkzeugkiste</h2>
-    <p class="slide-text">Angreifer unterscheiden drei Arten:</p>
+    <p class="slide-text">Arten von Angriffsvektoren:</p>
     <ul class="slide-list">
-      <li><strong>1. In-Band SQLi:</strong> Der Klassiker. Der Angreifer sieht die Ergebnisse direkt auf der Webseite.</li>
-      <li><strong>2. Blind SQLi:</strong> Die Seite zeigt keine Fehler. Der Angreifer stellt Ja/Nein-Fragen (z. B.: „Dauert die Antwort 5 Sekunden länger, wenn der erste Buchstabe des Passworts ein 'A' ist?“).</li>
-      <li><strong>3. Out-of-Band:</strong> Die Datenbank wird angewiesen, Daten über externe Kanäle (wie DNS) an den Angreifer zu senden.</li>
+      <li><strong>1. In-Band SQLi:</strong> Klassiker. Resultate direkt auf Webseite sichtbar.</li>
+      <li><strong>2. Blind SQLi:</strong> Keine Fehler sichtbar. Ja/Nein-Fragen (z. B.: <em>„Dauert Antwort > 5s bei 'A'?“</em>).</li>
+      <li><strong>3. Out-of-Band:</strong> Datenexfiltration über externe Kanäle (DNS).</li>
     </ul>
     
     <div class="demo-container" style="margin-top: 15px;">
@@ -618,16 +635,19 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title danger">Automatisierung & UNION</h2>
-    <p class="slide-text"><strong>UNION Based SQL Injection</strong></p>
-    <ul class="slide-list">
-      <li>Niemand macht das heute mehr nur händisch. Tools wie <span class="highlight-cyan">sqlmap</span> testen tausende Kombinationen pro Sekunde.</li>
-      <li>Ein Angreifer gibt nur die URL ein, und das Tool erkennt den Datenbanktyp und saugt auf Knopfdruck die Tabellen ab.</li>
-      <li>Das erhöht den Zeitdruck auf uns Entwickler massiv.</li>
-    </ul>
-    <div class="code-block danger">
-<span class="cmt">// Beispiel UNION Injection</span><br>
-' UNION SELECT id, username, password FROM users --
+    <p class="slide-text"><strong>4. UNION Based SQLi:</strong> Kombiniert eingeschleuste Abfrage mit der originalen.</p>
+    
+    <div class="code-block danger" style="font-size: 14px; padding: 10px; margin: 10px 0; line-height: 1.5;">
+      <span class="cmt">// 1. Original:</span> <span class="kw">SELECT</span> name, preis <span class="kw">FROM</span> produkte <span class="kw">WHERE</span> id = '<span class="inj">1</span>'<br>
+      <span class="cmt">// 2. Payload:</span> &nbsp;<span class="inj">1' UNION SELECT user, pass FROM users --</span><br>
+      <span class="cmt">// 3. Resultat:</span> <span class="kw">SELECT</span> name, preis <span class="kw">FROM</span> produkte <span class="kw">WHERE</span> id = '<span class="inj">1' UNION SELECT user, pass FROM users --</span>'
     </div>
+
+    <ul class="slide-list">
+      <li>Niemand testet mehr händisch: Tools wie <span class="highlight-cyan">sqlmap</span> = Tausende Kombis/Sekunde.</li>
+      <li>Vollautomatisch (URL rein -> Datenbanktyp erkannt & Tabellen kopiert).</li>
+      <li>Erhöht Druck auf Entwickler enorm.</li>
+    </ul>
   </div>
 </div>
 
@@ -635,19 +655,19 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title danger">Fatale Konsequenzen</h2>
-    <p class="slide-text">Es geht nicht nur um geklaute Passwörter:</p>
+    <p class="slide-text">Es geht um Existenzen:</p>
     <ul class="slide-list">
-      <li>In der Finanzwelt können <strong>Kontostände manipuliert</strong> werden.</li>
-      <li>Im Gesundheitswesen können <strong>Patientendaten gelöscht</strong> werden.</li>
-      <li>In extremen Fällen ermöglicht SQLi den Zugriff auf das <strong>Betriebssystem</strong> des Servers.</li>
+      <li>Finanzwelt: <strong>Kontostände manipulieren</strong></li>
+      <li>Gesundheitswesen: <strong>Patientendaten löschen/stehlen</strong></li>
+      <li>Extremfall: Remote Code Execution (OS-Zugriff)</li>
     </ul>
-    <div class="hint-box" style="margin-bottom: 15px;">Es ist der sprichwörtliche Super-GAU für jede IT.</div>
+    <div class="hint-box" style="margin-bottom: 15px;">Der IT-Super-GAU schlechthin.</div>
     
     <div class="panel">
       <div class="panel-title">Historische Fälle</div>
       <ul style="color: var(--text-mid); margin-left: 20px; margin-top: 5px;">
-        <li><strong style="color:var(--cyan);">Yahoo (2013):</strong> 3 Milliarden Konten kompromittiert (teilweise durch SQLi).</li>
-        <li><strong style="color:var(--cyan);">Sony Pictures Entertainment (2011):</strong> Über 1 Million Kundendaten durch SQL Injection gestohlen. Verlust: 100+ Millionen Dollar.</li>
+        <li><strong style="color:var(--cyan);">Yahoo (2013):</strong> 3 Milliarden Konten kompromittiert.</li>
+        <li><strong style="color:var(--cyan);">Sony Pictures (2011):</strong> >1 Million Kundendaten. Verlust: $100+ Mio.</li>
       </ul>
     </div>
   </div>
@@ -657,12 +677,12 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title">Die Lösung: Prepared Statements</h2>
-    <p class="slide-text">Die Lösung ist nicht mehr Filtern oder Ersetzen, sondern eine <span class="highlight-green">Trennung von Code und Daten</span> durch Prepared Statements.</p>
+    <p class="slide-text"><span class="highlight-green">Strikte Trennung von Code und Daten</span></p>
     <ul class="slide-list">
-      <li>Hierbei schicken wir zuerst das SQL-Template ohne Daten an die Datenbank: <code>SELECT * FROM users WHERE user = ?</code></li>
-      <li>Die Datenbank kompiliert diesen Befehl.</li>
-      <li>Erst danach werden die Parameter gesendet. Selbst wenn der User Code eingibt, behandelt die Datenbank ihn stur als Text.</li>
-      <li>Der Angriff verpufft wirkungslos.</li>
+      <li><strong>Ablauf:</strong> Vorab SQL-Template senden: <code>SELECT * FROM users WHERE user = ?</code></li>
+      <li>Datenbank kompiliert den strukturellen Befehl</li>
+      <li><strong>Erst danach:</strong> Parameter als sturer <em>Text</em> übergeben</li>
+      <li>Angriff verpufft garantiert (Kein Filtern nötig!)</li>
     </ul>
     
     <div class="demo-container" style="margin-top: 15px;">
@@ -683,12 +703,12 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title">Best Practices</h2>
-    <p class="slide-text">Für eine echte Verteidigung brauchen wir <strong>„Defense-in-Depth“</strong>:</p>
+    <p class="slide-text">Abwehrmechanismen in der Tiefe (<strong>Defense-in-Depth</strong>):</p>
     <ul class="slide-list">
-      <li><span class="highlight-cyan">Input-Validierung:</span> Nur erlauben, was Sinn ergibt (z. B. nur Zahlen für Alter).</li>
-      <li><span class="highlight-cyan">Least Privilege:</span> Der DB-User der App sollte keine Rechte zum Löschen von Tabellen haben.</li>
-      <li><span class="highlight-cyan">Error Handling:</span> Keine Details über die DB-Struktur in Fehlermeldungen anzeigen.</li>
-      <li><span class="highlight-cyan">WAF:</span> Eine Firewall nutzen, die bekannte Muster blockt.</li>
+      <li><span class="highlight-cyan">Input-Validierung:</span> Nur valide Datentypen erlauben (z.B. Integer für Alter)</li>
+      <li><span class="highlight-cyan">Least Privilege Prinzip:</span> DB-User ohne globale Rechte betreiben</li>
+      <li><span class="highlight-cyan">Sicheres Error Handling:</span> SQL-Fehler komplett unterdrücken</li>
+      <li><span class="highlight-cyan">WAF (Web App. Firewall):</span> Bekannte Muster von vornherein blocken</li>
     </ul>
   </div>
 </div>
@@ -697,13 +717,15 @@ body {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title">Fazit</h2>
-    <p class="slide-text">SQL-Injection ist ein vermeidbares Relikt. Als Entwickler ist es unsere Verantwortung, Sicherheit nicht als nachträgliches Feature, sondern als <strong>Fundament</strong> zu sehen.</p>
+    <p class="slide-text">Sicherheit ist kein nachträgliches Feature, sondern das <strong>Software-Fundament</strong>.</p>
     <ul class="slide-list">
-      <li>Ein sauberer Umgang mit Parametern entscheidet darüber, ob eure Applikation professionell ist oder eine <span class="highlight-red">tickende Zeitbombe</span>.</li>
+      <li>Vermeidbares Relikt der IT-Geschichte</li>
+      <li>Verantwortung von uns Entwicklern!</li>
+      <li>Umgang mit Parametern entscheidet: Professionell vs. <span class="highlight-red">Tickende Zeitbombe</span></li>
     </ul>
     <div style="text-align: center; margin-top: 40px;">
-      <h3 style="color: var(--yellow); font-size: 28px;">Vielen Dank für eure Aufmerksamkeit!</h3>
-      <p class="slide-text" style="margin-top: 20px;"><span class="highlight-green" style="font-size: 24px;">Habt ihr Fragen?</span></p>
+      <h3 style="color: var(--yellow); font-size: 28px;">Danke für eure Aufmerksamkeit!</h3>
+      <p class="slide-text" style="margin-top: 20px;"><span class="highlight-green" style="font-size: 24px;">Fragen?</span></p>
     </div>
   </div>
 </div>
