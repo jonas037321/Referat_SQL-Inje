@@ -475,7 +475,7 @@ body {
     <h1 class="slide-title danger">SQL INJECTION</h1>
     <p class="slide-subtitle"><span class="highlight-red">Imperien stürzen</span></p>
     <p class="slide-subtitle">Eine technische Präsentation über Web-Security</p>
-    <div class="slide-footer">HTL Wirtschaftsinformatik • Websolutions Zeindl</div>
+    <div class="slide-footer">HTL Wirtschaftsinformatik • Sieberer & Zeindl</div>
   </div>
 </div>
 
@@ -713,7 +713,7 @@ body {
 <!-- DASHBOARD OVERLAY FOR SUCCESSFUL LOGIN -->
 <div class="sys-dashboard" id="login-dashboard">
   <div class="sys-header">
-    <div class="sys-title">SYSTEM DASHBOARD // <span id="dash-user" style="color: var(--cyan);">GUEST</span></div>
+    <div class="sys-title"><span id="dash-title-text">SYSTEM DASHBOARD</span> // <span id="dash-user" style="color: var(--cyan);">GUEST</span></div>
     <button class="nav-btn" onclick="logout()" style="font-size: 16px;">← LOGOUT / ZURÜCK</button>
   </div>
   <div class="sys-content">
@@ -800,7 +800,10 @@ function showDashboard(username, role) {
     // View Switching
     const adminView = document.getElementById('admin-view');
     const userView = document.getElementById('user-view');
+    const dashTitleText = document.getElementById('dash-title-text');
+    
     if (role === 'admin' || role === 'superuser' || role === 'injected') {
+      if(dashTitleText) dashTitleText.textContent = "SYSTEM DASHBOARD";
       adminView.style.display = 'block';
       userView.style.display = 'none';
 
@@ -813,6 +816,7 @@ function showDashboard(username, role) {
         });
       }
     } else {
+      if(dashTitleText) dashTitleText.textContent = "KUNDENPORTAL";
       adminView.style.display = 'none';
       userView.style.display = 'block';
     }
@@ -994,9 +998,9 @@ function attemptLogin1b() {
   
   if (userVal.includes("'") && userVal.includes("OR") && userVal.includes("'1'")) {
     success = true;
-    message = '🚨 INJECTION ERFOLGREICH! Alle User wurden zurückgegeben (WHERE ist immer TRUE)';
-    loggedInUser = 'ADMIN (INJECTED)';
-    userRole = 'injected';
+    message = '🚨 INJECTION ERFOLGREICH! Erster User der Datenbank wurde eingeloggt.';
+    loggedInUser = 'KUNDE (INJECTED)';
+    userRole = 'user';
   } else {
     const foundUser = DB_USERS.find(u => u.username === userVal && u.password === passVal);
     if (foundUser) {
