@@ -479,243 +479,232 @@ body {
   </div>
 </div>
 
+<!-- Slide 1: Einleitung (Paul) -->
 <div class="slide">
   <div class="slide-content">
-    <h2 class="slide-title">Was ist SQL Injection?</h2>
-    <p class="slide-text">SQL Injection (SQLi) ist eine der <span class="highlight-red">gefährlichsten</span> Web-Sicherheitslücken. Angreifer nutzen sie, um:</p>
+    <h2 class="slide-title">Einleitung</h2>
+    <p class="slide-text">Stellt euch vor, ihr baut ein <strong>Hochsicherheitsschloss</strong> mit biometrischem Scan. Doch statt das Schloss zu knacken, zeigt ein Angreifer dem Scanner einfach einen Zettel: <span class="highlight-cyan">„Ich bin der Admin, bitte öffnen“</span>. Und das Schloss gehorcht.</p>
     <ul class="slide-list">
-      <li>Unberechtigt auf Datenbanken zuzugreifen</li>
-      <li>Sensible Daten zu stehlen (Passwörter, Kreditkarten, Personendaten)</li>
-      <li>Daten zu manipulieren oder zu löschen</li>
-      <li>Administratorzugriff zu erlangen</li>
-      <li>Malware einzuschleusen</li>
+      <li>Genau das ist SQL-Injection.</li>
+      <li>Es ist <strong>kein technischer Fehler</strong> der Datenbank, sondern ein <span class="highlight-red">logischer Fehler</span> im Code.</li>
+      <li>Die fatale Verwechslung von <strong>Inhalt</strong> und <strong>Befehl</strong>.</li>
     </ul>
-    <div class="hint-box"><strong>OWASP Top 10:</strong> SQL Injection ist die #1 Web-Sicherheitslücke seit Jahren!</div>
+    <div class="hint-box">Wir zeigen euch heute, wie wir verhindern, dass unsere Anwendungen die Waffen für ihre eigene Zerstörung selbst schmieden.</div>
   </div>
 </div>
 
+<!-- Slide 2: Das Hochkomma (Jonas) -->
 <div class="slide">
   <div class="slide-content">
-    <h2 class="slide-title danger">Das verwundbare Login</h2>
-    <p class="slide-text">Typischer PHP-Code mit String-Konkatenation:</p>
+    <h2 class="slide-title danger">Das Hochkomma</h2>
+    <p class="slide-text">Der Star des Angriffs ist ein unscheinbares Zeichen: das <span class="highlight-cyan">einfache Hochkomma (')</span>.</p>
+    <ul class="slide-list">
+      <li>In SQL markiert es den Anfang und das Ende eines Textwertes.</li>
+      <li>Das Problem: Wenn wir Benutzereingaben ungefiltert in SQL-Befehle einbetten, kontrolliert derjenige, der das Hochkomma setzt, den Parser.</li>
+      <li>Ein injiziertes Hochkomma signalisiert dem System: <em>„Hier enden die Daten, ab jetzt folgt ein neuer Befehl.“</em></li>
+    </ul>
+    <div class="hint-box">Damit wird der Angreifer vom passiven Nutzer zum <strong>Co-Autor</strong> der Datenbankabfrage.</div>
+  </div>
+</div>
+
+<!-- Slide 3: Risikobewertung (Paul) -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title">Risikobewertung</h2>
+    <p class="slide-text">Warum reden wir nach 20 Jahren immer noch darüber?</p>
+    <ul class="slide-list">
+      <li>Weil „Injection“ laut <span class="highlight-red">OWASP Top 10</span> immer noch einer der gefährlichsten Angriffsvektoren ist.</li>
+      <li>Ein Data Breach kostet heute im Schnitt <strong>4 Millionen Dollar</strong>.</li>
+      <li>Da fast jede Firma auf relationalen Datenbanken basiert, ist die SQL-Schnittstelle das logische Ziel.</li>
+      <li>Wer die Injection beherrscht, hat den Generalschlüssel zu Kundendaten, Finanzen und internen Strategien.</li>
+    </ul>
+    <div class="hint-box">Es ist der totale Verlust der Datenhoheit.</div>
+  </div>
+</div>
+
+<!-- Slide 4: Mechanik der Injektion (Jonas) -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title danger">Mechanik der Injektion</h2>
+    <p class="slide-text">Die Theorie ist simpel: Der Server erwartet Daten (z. B. eine User-ID), um einen Befehl zu vervollständigen.</p>
+    <ul class="slide-list">
+      <li>Wir füttern ihm aber ein <strong>syntaktisches Fragment</strong>, das die Logik des Befehls zur Laufzeit verändert.</li>
+      <li>Da das Backend den Input als vertrauenswürdig einstuft, wird der bösartige Code mit <strong>vollen Privilegien</strong> ausgeführt.</li>
+    </ul>
+    <div class="hint-box">Ein Angriff auf die semantische Integrität des Programms.</div>
+  </div>
+</div>
+
+<!-- Slide 5: Der vulnerable Code + Admin Demo (Paul) -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title danger">Der vulnerable Code</h2>
+    <p class="slide-text">Schauen wir uns den „Code des Grauens“ an:</p>
     <div class="code-block danger">
-$user = $_POST['username'];
-$pass = $_POST['password'];
-<span class="inj">$query = "SELECT * FROM users WHERE username = '$user' AND password = '$pass'";</span>
-$result = mysqli_query($conn, $query);
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = '<span class="inj"> + $_POST['user'] + </span>' <span class="kw">AND</span> password = ...
     </div>
-    <p class="slide-text">Das Problem: <span class="highlight-red">Benutzereingaben werden direkt in SQL eingebunden!</span></p>
-    <div class="hint-box">💡 Wenn der Benutzer ein <code>'</code> (Hochkomma) eingibt, kann die SQL-Struktur zerstört werden!</div>
-  </div>
-</div>
-
-<div class="slide">
-  <div class="slide-content">
-    <h2 class="slide-title danger">Das Hochkomma – Der Schlüssel</h2>
-    <div class="two-col">
-      <div class="col">
-        <div class="col-title">Erwartete Query:</div>
-        <div class="code-block"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users<br><span class="kw">WHERE</span> username = <span class="str">'max'</span><br><span class="kw">AND</span> password = <span class="str">'pass123'</span></div>
-      </div>
-      <div class="col">
-        <div class="col-title">Mit Injection (Username = ' OR '1'='1):</div>
-        <div class="code-block danger"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users<br><span class="kw">WHERE</span> username = <span class="inj">''</span> <span class="kw">OR</span> <span class="inj">'1'='1</span><br><span class="kw">AND</span> password = <span class="str">'pass123'</span></div>
-      </div>
-    </div>
-    <p class="slide-text"><strong>Ergebnis:</strong> Die WHERE-Bedingung ist <span class="highlight-red">IMMER WAHR</span> → Alle User werden zurückgegeben!</p>
-  </div>
-</div>
-
-<div class="slide">
-  <div class="slide-content">
-    <h2 class="slide-title">Demo: Klassische SQL Injection</h2>
-    <div class="demo-container">
+    <ul class="slide-list">
+      <li>Gibt ein Angreifer im Feld User <span class="highlight-cyan">admin' --</span> ein, denkt die Datenbank, der Name sei zu Ende.</li>
+      <li>Das <code>--</code> kommentiert den Rest der Abfrage (inklusive Passwortprüfung) einfach aus.</li>
+      <li>Das Resultat: Die Abfrage reduziert sich auf <span class="highlight-cyan">SELECT * FROM users WHERE username = 'admin'</span>. Der Angreifer ist drin – ohne Passwort.</li>
+    </ul>
+    
+    <div class="demo-container" style="margin-top: 15px;">
       <div class="demo-title">Login-Formular (VULNERABLE MODE)</div>
-      <div class="form-group">
-        <label class="form-label">Benutzername:</label>
-        <input type="text" class="form-input" id="demo1-user" placeholder="z.B. admin" oninput="updateDemo1Query()">
+      <div class="form-group" style="display:flex; gap:10px;">
+        <input type="text" class="form-input" id="demo1-user" placeholder="z.B. admin" oninput="updateDemo1Query()" style="flex:1;">
+        <input type="text" class="form-input" id="demo1-pass" placeholder="Passwort" oninput="updateDemo1Query()" style="flex:1;">
       </div>
-      <div class="form-group">
-        <label class="form-label">Passwort:</label>
-        <input type="text" class="form-input" id="demo1-pass" placeholder="z.B. password" oninput="updateDemo1Query()">
-      </div>
-      <button class="btn btn-danger" onclick="injectClassic1()">Injection: ' OR '1'='1' --</button>
       <button class="btn btn-danger" onclick="injectAdmin1()">Injection: admin'--</button>
       <button class="btn" onclick="attemptLogin1()">LOGIN VERSUCHEN</button>
-      <div class="query-display" id="demo1-query"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = <span class="str">''</span> <span class="kw">AND</span> password = <span class="str">''</span></div>
-      <div class="login-result" id="demo1-result"></div>
-      <div class="hint-box">💡 Probiere die Injection-Buttons aus oder gib selbst <code>' OR '1'='1' --</code> ein!</div>
+      <div class="query-display" id="demo1-query" style="font-size: 14px;"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = <span class="str">''</span> <span class="kw">AND</span> password = <span class="str">''</span></div>
+      <div class="login-result" id="demo1-result" style="padding: 8px;"></div>
     </div>
   </div>
 </div>
 
+<!-- Slide 6: Tautologien + 1=1 Demo (Jonas) -->
 <div class="slide">
   <div class="slide-content">
-    <h2 class="slide-title danger">Verschiedene Injection-Varianten</h2>
+    <h2 class="slide-title danger">Tautologien</h2>
+    <p class="slide-text">Ein mächtiges Werkzeug ist die Tautologie – eine Aussage, die immer wahr ist, wie <span class="highlight-cyan">' OR '1'='1</span>.</p>
     <ul class="slide-list">
-      <li><strong>' OR '1'='1' --</strong><br>Klassische Methode: Macht die WHERE-Bedingung IMMER wahr</li>
-      <li><strong>admin'--</strong><br>Comment-Bypass: Ignoriert das Passwort durch SQL-Kommentar</li>
-      <li><strong>'; DROP TABLE users; --</strong><br>Destruktiv: Löscht ganze Tabellen</li>
-      <li><strong>UNION SELECT ...</strong><br>Daten extrahieren: Holt verborgene Datenbankdaten</li>
-      <li><strong>SLEEP() / TIME-BASED BLIND SQLi</strong><br>Blind Injection: Exfiltration durch Zeitmessungen</li>
+      <li>Wird dies injiziert, wird die WHERE-Bedingung für <strong>jeden</strong> Datensatz in der Tabelle wahr.</li>
+      <li>Anstatt einen User zu suchen, liefert die Datenbank <strong>alle User</strong> zurück.</li>
+      <li>Meistens loggt das System dann automatisch den ersten Treffer ein – und das ist fast immer der Administrator.</li>
     </ul>
-    <div class="hint-box">⚠️ Diese sind nur einige Beispiele. Die Möglichkeiten sind nahezu unbegrenzt!</div>
+    
+    <div class="demo-container" style="margin-top: 15px;">
+      <div class="demo-title">Login-Formular (TAUTOLOGIE MODE)</div>
+      <div class="form-group" style="display:flex; gap:10px;">
+        <input type="text" class="form-input" id="demo1b-user" placeholder="z.B. ' OR '1'='1" oninput="updateDemo1bQuery()" style="flex:1;">
+        <input type="text" class="form-input" id="demo1b-pass" placeholder="Passwort" oninput="updateDemo1bQuery()" style="flex:1;">
+      </div>
+      <button class="btn btn-danger" onclick="injectClassic1b()">Injection: ' OR '1'='1' --</button>
+      <button class="btn" onclick="attemptLogin1b()">LOGIN VERSUCHEN</button>
+      <div class="query-display" id="demo1b-query" style="font-size: 14px;"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = <span class="str">''</span> <span class="kw">AND</span> password = <span class="str">''</span></div>
+      <div class="login-result" id="demo1b-result" style="padding: 8px;"></div>
+    </div>
   </div>
 </div>
 
+<!-- Slide 7: Die Werkzeugkiste + Blind SQLi Demo (Paul) -->
 <div class="slide">
   <div class="slide-content">
-    <h2 class="slide-title danger">Historische Fälle</h2>
-    <div class="panel">
-      <div class="panel-title">Sony Pictures Entertainment (2011)</div>
-      <p style="color: var(--text-mid); margin-top: 8px;">Über 1 Million Kundendaten durch SQL Injection gestohlen. Verlust: 100+ Millionen Dollar.</p>
-    </div>
-    <div class="panel">
-      <div class="panel-title">TalkTalk (2015)</div>
-      <p style="color: var(--text-mid); margin-top: 8px;">4 Millionen Kunden betroffen. Angreifer nutzten SQL Injection.</p>
-    </div>
-    <div class="panel">
-      <div class="panel-title">Yahoo (2013)</div>
-      <p style="color: var(--text-mid); margin-top: 8px;">3 Milliarden Konten kompromittiert (teilweise durch SQLi).</p>
-    </div>
-    <p class="slide-text" style="margin-top: 24px;"><span class="highlight-red">SQL Injection ist nicht theoretisch – es passiert JEDEN TAG in der realen Welt!</span></p>
-  </div>
-</div>
-
-<div class="slide">
-  <div class="slide-content">
-    <h2 class="slide-title danger">Blind SQL Injection</h2>
-    <p class="slide-text">Was wenn die Datenbank keine Fehler anzeigt?</p>
+    <h2 class="slide-title">Die Werkzeugkiste</h2>
+    <p class="slide-text">Angreifer unterscheiden drei Arten:</p>
     <ul class="slide-list">
-      <li><strong>Time-Based:</strong> Angreifer sendet Queries die bei bestimmten Bedingungen lange dauern</li>
-      <li><strong>Boolean-Based:</strong> Unterschiedliche Responses (wahr/falsch)</li>
-      <li><strong>Exfiltration:</strong> Daten werden Bit-für-Bit durch Messungen extrahiert</li>
+      <li><strong>1. In-Band SQLi:</strong> Der Klassiker. Der Angreifer sieht die Ergebnisse direkt auf der Webseite.</li>
+      <li><strong>2. Blind SQLi:</strong> Die Seite zeigt keine Fehler. Der Angreifer stellt Ja/Nein-Fragen (z. B.: „Dauert die Antwort 5 Sekunden länger, wenn der erste Buchstabe des Passworts ein 'A' ist?“).</li>
+      <li><strong>3. Out-of-Band:</strong> Die Datenbank wird angewiesen, Daten über externe Kanäle (wie DNS) an den Angreifer zu senden.</li>
     </ul>
-    <div class="code-block">username = <span class="str">'admin' AND SLEEP(5) -- </span><br><span class="cmt">// Wenn admin existiert → 5 Sekunden Verzögerung!</span></div>
-    <p class="slide-text">Dadurch können Angreifer <span class="highlight-red">jedes Passwort zeichenweise erraten</span>!</p>
-  </div>
-</div>
-
-<div class="slide">
-  <div class="slide-content">
-    <h2 class="slide-title">Demo: Blind SQL Injection (Timing)</h2>
-    <div class="demo-container">
-      <div class="demo-title">Zeitbasierte Datenexfiltration</div>
-      <p class="slide-text">Der Server antwortet langsam, wenn die Bedingung erfüllt ist. So können wir Daten extrahieren:</p>
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 20px 0;">
-        <button class="btn btn-danger" onclick="runBlindSQLi(1)">Test 1<br><span style="font-size: 11px;">(admin existiert?)</span></button>
-        <button class="btn btn-danger" onclick="runBlindSQLi(2)">Test 2<br><span style="font-size: 11px;">(Passwort startet mit 'S'?)</span></button>
+    
+    <div class="demo-container" style="margin-top: 15px;">
+      <div class="demo-title">Demo: Time-Based Blind SQLi</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 10px 0;">
+        <button class="btn btn-danger" onclick="runBlindSQLi(1)">Test 1<br><span style="font-size: 11px;">(Admin existiert?)</span></button>
+        <button class="btn btn-danger" onclick="runBlindSQLi(2)">Test 2<br><span style="font-size: 11px;">(Passwort startet mit 'A'?)</span></button>
         <button class="btn btn-danger" onclick="runBlindSQLi(3)">Test 3<br><span style="font-size: 11px;">(Admin ist Superuser?)</span></button>
       </div>
-      <div id="blind-timing" style="background: var(--bg-card); border: 1px solid var(--border); padding: 12px; border-radius: 3px; margin: 12px 0;">
+      <div id="blind-timing" style="background: var(--bg-card); border: 1px solid var(--border); padding: 12px; border-radius: 3px;">
         <div style="font-size: 13px; color: var(--text-dim);">ANTWORTZEIT:</div>
-        <div style="font-size: 24px; color: var(--green); margin-top: 8px;"><span id="blind-value">-</span> ms <span id="blind-status" style="font-size: 14px; margin-left: 12px;"></span></div>
+        <div style="font-size: 24px; color: var(--green); margin-top: 5px;"><span id="blind-value">-</span> ms <span id="blind-status" style="font-size: 14px; margin-left: 12px;"></span></div>
       </div>
-      <div class="hint-box">⏱️ Wenn die Response &gt; 2000ms dauert, ist die Bedingung erfüllt!</div>
     </div>
   </div>
 </div>
 
+<!-- Slide 8: Automatisierung (Jonas) -->
 <div class="slide">
   <div class="slide-content">
-    <h2 class="slide-title danger">UNION-Based SQL Injection</h2>
-    <p class="slide-text">Mit <code>UNION SELECT</code> können mehrere Tabellen kombiniert werden:</p>
-    <div class="code-block danger"><span class="cmt">// Injection:</span><br>username = <span class="str">' UNION SELECT id, username, password FROM users -- </span><br><br><span class="cmt">// Resultierende Query:</span><br><span class="kw">SELECT</span> * <span class="kw">FROM</span> users<br><span class="kw">WHERE</span> username = <span class="inj">'' UNION SELECT id, username, password FROM users --</span><br><span class="kw">AND</span> password = <span class="str">''</span></div>
-    <p class="slide-text">Angreifer sieht nun <span class="highlight-red">ALLE Benutzerdaten</span> inklusive Passwörter!</p>
-    <div class="hint-box">💡 UNION ist besonders mächtig, weil Daten direkt im Response sichtbar sind.</div>
+    <h2 class="slide-title danger">Automatisierung & UNION</h2>
+    <p class="slide-text"><strong>UNION Based SQL Injection</strong></p>
+    <ul class="slide-list">
+      <li>Niemand macht das heute mehr nur händisch. Tools wie <span class="highlight-cyan">sqlmap</span> testen tausende Kombinationen pro Sekunde.</li>
+      <li>Ein Angreifer gibt nur die URL ein, und das Tool erkennt den Datenbanktyp und saugt auf Knopfdruck die Tabellen ab.</li>
+      <li>Das erhöht den Zeitdruck auf uns Entwickler massiv.</li>
+    </ul>
+    <div class="code-block danger">
+<span class="cmt">// Beispiel UNION Injection</span><br>
+' UNION SELECT id, username, password FROM users --
+    </div>
   </div>
 </div>
 
+<!-- Slide 9: Fatale Konsequenzen (Paul) -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title danger">Fatale Konsequenzen</h2>
+    <p class="slide-text">Es geht nicht nur um geklaute Passwörter:</p>
+    <ul class="slide-list">
+      <li>In der Finanzwelt können <strong>Kontostände manipuliert</strong> werden.</li>
+      <li>Im Gesundheitswesen können <strong>Patientendaten gelöscht</strong> werden.</li>
+      <li>In extremen Fällen ermöglicht SQLi den Zugriff auf das <strong>Betriebssystem</strong> des Servers.</li>
+    </ul>
+    <div class="hint-box" style="margin-bottom: 15px;">Es ist der sprichwörtliche Super-GAU für jede IT.</div>
+    
+    <div class="panel">
+      <div class="panel-title">Historische Fälle</div>
+      <ul style="color: var(--text-mid); margin-left: 20px; margin-top: 5px;">
+        <li><strong style="color:var(--cyan);">Yahoo (2013):</strong> 3 Milliarden Konten kompromittiert (teilweise durch SQLi).</li>
+        <li><strong style="color:var(--cyan);">Sony Pictures Entertainment (2011):</strong> Über 1 Million Kundendaten durch SQL Injection gestohlen. Verlust: 100+ Millionen Dollar.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 10: Die Lösung – Prepared Statements (Jonas) -->
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title">Die Lösung: Prepared Statements</h2>
-    <p class="slide-text">Prepared Statements trennen <span class="highlight-green">Code</span> von <span class="highlight-green">Daten</span>:</p>
-    <div class="code-block"><span class="cmt">// SICHER: Prepared Statement (PHP mysqli)</span><br>$stmt = $conn->prepare(<span class="str">"SELECT * FROM users WHERE username = ? AND password = ?"</span>);<br>$stmt->bind_param(<span class="str">"ss"</span>, $user, $pass);<br>$stmt->execute();<br>$result = $stmt->get_result();</div>
+    <p class="slide-text">Die Lösung ist nicht mehr Filtern oder Ersetzen, sondern eine <span class="highlight-green">Trennung von Code und Daten</span> durch Prepared Statements.</p>
     <ul class="slide-list">
-      <li>Das <code>?</code> wird als <strong>Platzhalter</strong> behandelt</li>
-      <li>Benutzereingaben werden <strong>IMMER als Daten</strong> interpretiert</li>
-      <li>SQL-Metazeichen wie <code>'</code> werden automatisch <strong>escaped</strong></li>
-      <li>Injection ist <strong>unmöglich</strong></li>
+      <li>Hierbei schicken wir zuerst das SQL-Template ohne Daten an die Datenbank: <code>SELECT * FROM users WHERE user = ?</code></li>
+      <li>Die Datenbank kompiliert diesen Befehl.</li>
+      <li>Erst danach werden die Parameter gesendet. Selbst wenn der User Code eingibt, behandelt die Datenbank ihn stur als Text.</li>
+      <li>Der Angriff verpufft wirkungslos.</li>
     </ul>
-  </div>
-</div>
-
-<div class="slide">
-  <div class="slide-content">
-    <h2 class="slide-title">Demo: Prepared Statements (SICHER)</h2>
-    <div class="demo-container">
-      <div class="demo-title">Login mit Prepared Statements</div>
-      <div class="form-group">
-        <label class="form-label">Benutzername:</label>
-        <input type="text" class="form-input" id="demo2-user" placeholder="z.B. admin" oninput="updateDemo2Query()">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Passwort:</label>
-        <input type="text" class="form-input" id="demo2-pass" placeholder="z.B. password" oninput="updateDemo2Query()">
+    
+    <div class="demo-container" style="margin-top: 15px;">
+      <div class="demo-title">Login (SECURE PREPARED STATEMENTS)</div>
+      <div class="form-group" style="display:flex; gap:10px;">
+        <input type="text" class="form-input" id="demo2-user" placeholder="Benutzername" oninput="updateDemo2Query()" style="flex:1;">
+        <input type="text" class="form-input" id="demo2-pass" placeholder="Passwort" oninput="updateDemo2Query()" style="flex:1;">
       </div>
       <button class="btn btn-danger" onclick="injectClassic2()">Versuchen: ' OR '1'='1' --</button>
-      <button class="btn btn-danger" onclick="injectAdmin2()">Versuchen: admin'--</button>
       <button class="btn" onclick="attemptLogin2()">LOGIN VERSUCHEN</button>
-      <div class="query-display" id="demo2-query"><span class="kw">PREPARE</span> <span class="str">"SELECT * FROM users WHERE username = ? AND password = ?"</span><br><span class="kw">BIND</span> <span style="color: var(--cyan);">param1, param2</span></div>
-      <div class="login-result" id="demo2-result"></div>
-      <div class="hint-box">✅ Hier funktioniert die Injection <span class="highlight-green">NICHT</span> – egal was du eingibst!</div>
+      <div class="query-display" id="demo2-query" style="font-size: 14px;"></div>
+      <div class="login-result" id="demo2-result" style="padding: 8px;"></div>
     </div>
   </div>
 </div>
 
+<!-- Slide 11: Best Practices (Paul) -->
 <div class="slide">
   <div class="slide-content">
-    <h2 class="slide-title">Best Practices für sichere Applikationen</h2>
+    <h2 class="slide-title">Best Practices</h2>
+    <p class="slide-text">Für eine echte Verteidigung brauchen wir <strong>„Defense-in-Depth“</strong>:</p>
     <ul class="slide-list">
-      <li><strong>Prepared Statements / Parameterized Queries verwenden</strong> (immer!)</li>
-      <li><strong>Input Validation:</strong> Daten validieren und filtern</li>
-      <li><strong>Least Privilege:</strong> DB-User mit minimalen Rechten</li>
-      <li><strong>Error Handling:</strong> Keine SQL-Fehler an User anzeigen</li>
-      <li><strong>Web Application Firewall (WAF):</strong> Zusätzliche Schutzebene</li>
-      <li><strong>Regular Updates:</strong> Framework und Dependencies aktuell halten</li>
-      <li><strong>Security Testing:</strong> Penetration Tests durchführen</li>
-      <li><strong>Code Review:</strong> Andere Entwickler Code überprüfen lassen</li>
+      <li><span class="highlight-cyan">Input-Validierung:</span> Nur erlauben, was Sinn ergibt (z. B. nur Zahlen für Alter).</li>
+      <li><span class="highlight-cyan">Least Privilege:</span> Der DB-User der App sollte keine Rechte zum Löschen von Tabellen haben.</li>
+      <li><span class="highlight-cyan">Error Handling:</span> Keine Details über die DB-Struktur in Fehlermeldungen anzeigen.</li>
+      <li><span class="highlight-cyan">WAF:</span> Eine Firewall nutzen, die bekannte Muster blockt.</li>
     </ul>
-    <div class="hint-box">🛡️ <strong>Goldene Regel:</strong> Prepared Statements sind das Mittel #1!</div>
   </div>
 </div>
 
+<!-- Slide 12: Fazit (Jonas & Paul) -->
 <div class="slide">
   <div class="slide-content">
-    <h2 class="slide-title">Tools zur Erkennung & Testing</h2>
-    <div class="panel">
-      <div class="panel-title">Penetration Testing Tools</div>
-      <ul style="margin-top: 8px; color: var(--text-mid);">
-        <li>🔧 <strong>SQLMap:</strong> Automatisiertes SQL Injection Testing</li>
-        <li>🔧 <strong>Burp Suite:</strong> Web Security Testing (Professional)</li>
-        <li>🔧 <strong>OWASP ZAP:</strong> Kostenloser Web App Scanner</li>
-        <li>🔧 <strong>Acunetix:</strong> Automatisierter Web-Vulnerability Scanner</li>
-      </ul>
-    </div>
-    <div class="panel">
-      <div class="panel-title">Lern-Ressourcen</div>
-      <ul style="margin-top: 8px; color: var(--text-mid);">
-        <li>📚 <strong>OWASP Testing Guide:</strong> Umfassender Security-Leitfaden</li>
-        <li>📚 <strong>PortSwigger Web Security Academy:</strong> Interaktive Trainings</li>
-        <li>📚 <strong>HackTheBox / TryHackMe:</strong> Praktische Challenge-Plattformen</li>
-        <li>📚 <strong>CWE-89 (SQL Injection):</strong> Offizielle Dokumentation</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<div class="slide">
-  <div class="slide-content">
-    <h2 class="slide-title">Zusammenfassung</h2>
+    <h2 class="slide-title">Fazit</h2>
+    <p class="slide-text">SQL-Injection ist ein vermeidbares Relikt. Als Entwickler ist es unsere Verantwortung, Sicherheit nicht als nachträgliches Feature, sondern als <strong>Fundament</strong> zu sehen.</p>
     <ul class="slide-list">
-      <li>✅ SQL Injection ist eine kritische Sicherheitslücke (OWASP #1)</li>
-      <li>✅ Sie entsteht durch String-Konkatenation von Benutzereingaben</li>
-      <li>✅ Angreifer können Datenbanken kompromittieren, löschen oder stehlen</li>
-      <li>✅ <span class="highlight-green">Prepared Statements sind die Lösung!</span></li>
-      <li>✅ Zusätzliche Maßnahmen: Input Validation, Error Handling, WAF</li>
-      <li>✅ Regelmäßiges Security Testing ist essentiell</li>
+      <li>Ein sauberer Umgang mit Parametern entscheidet darüber, ob eure Applikation professionell ist oder eine <span class="highlight-red">tickende Zeitbombe</span>.</li>
     </ul>
-    <p class="slide-text" style="margin-top: 40px; text-align: center;"><span class="highlight-green" style="font-size: 20px;">FRAGEN?</span></p>
+    <div style="text-align: center; margin-top: 40px;">
+      <h3 style="color: var(--yellow); font-size: 28px;">Vielen Dank für eure Aufmerksamkeit!</h3>
+      <p class="slide-text" style="margin-top: 20px;"><span class="highlight-green" style="font-size: 24px;">Habt ihr Fragen?</span></p>
+    </div>
   </div>
 </div>
 
@@ -958,6 +947,77 @@ function attemptLogin1() {
 }
 
 // ══════════════════════════════════════════════════════════
+// DEMO 1B: TAUTOLOGIE MODE
+// ══════════════════════════════════════════════════════════
+function updateDemo1bQuery() {
+  const user = document.getElementById('demo1b-user');
+  const pass = document.getElementById('demo1b-pass');
+  const query = document.getElementById('demo1b-query');
+  
+  if (!user || !pass || !query) return;
+  
+  const userVal = user.value;
+  const passVal = pass.value;
+  const hasInjection = /['";\-x]/.test(userVal + passVal);
+  
+  let html = '<span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> ';
+  html += 'username = <span class="str">\'' + (hasInjection ? '<span style="color:var(--red);">' + userVal + '</span>' : userVal) + '\'</span> ';
+  html += '<span class="kw">AND</span> password = <span class="str">\'' + (hasInjection ? '<span style="color:var(--red);">' + passVal + '</span>' : passVal) + '\'</span>';
+  
+  query.innerHTML = html;
+}
+
+function injectClassic1b() {
+  const user = document.getElementById('demo1b-user');
+  const pass = document.getElementById('demo1b-pass');
+  if (user && pass) {
+    user.value = "' OR '1'='1' --";
+    pass.value = "";
+    updateDemo1bQuery();
+  }
+}
+
+function attemptLogin1b() {
+  const user = document.getElementById('demo1b-user');
+  const pass = document.getElementById('demo1b-pass');
+  const result = document.getElementById('demo1b-result');
+  
+  if (!user || !pass || !result) return;
+  
+  const userVal = user.value.trim();
+  const passVal = pass.value.trim();
+  
+  let success = false;
+  let message = '';
+  let loggedInUser = '';
+  let userRole = 'user';
+  
+  if (userVal.includes("'") && userVal.includes("OR") && userVal.includes("'1'")) {
+    success = true;
+    message = '🚨 INJECTION ERFOLGREICH! Alle User wurden zurückgegeben (WHERE ist immer TRUE)';
+    loggedInUser = 'ADMIN (INJECTED)';
+    userRole = 'injected';
+  } else {
+    const foundUser = DB_USERS.find(u => u.username === userVal && u.password === passVal);
+    if (foundUser) {
+      success = true;
+      message = `✓ Login erfolgreich als ${foundUser.username}`;
+      loggedInUser = foundUser.username.toUpperCase();
+      userRole = foundUser.role;
+    } else {
+      message = '✗ Ungültige Anmeldedaten';
+    }
+  }
+  
+  result.className = success ? 'login-result success' : 'login-result fail';
+  result.textContent = message;
+
+  if (success) {
+    setTimeout(() => showDashboard(loggedInUser, userRole), 600);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
 // DEMO 2: SECURE PREPARED STATEMENTS
 // ══════════════════════════════════════════════════════════
 function updateDemo2Query() {
@@ -1071,6 +1131,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initialize demos
   updateDemo1Query();
+  updateDemo1bQuery();
   updateDemo2Query();
   
   // Keyboard navigation
