@@ -490,7 +490,6 @@ body::-webkit-scrollbar {
 <div class="slide active title-slide">
   <div class="slide-content">
     <h1 class="slide-title danger">SQL INJECTION</h1>
-    <p class="slide-subtitle"><span class="highlight-red">Imperien stürzen</span></p>
     <p class="slide-subtitle">Eine technische Präsentation über Web-Security</p>
     <div class="slide-footer">HTL Wirtschaftsinformatik • Sieberer & Zeindl</div>
   </div>
@@ -506,7 +505,7 @@ body::-webkit-scrollbar {
       <li><span class="highlight-red">Logischer Fehler</span> im Code</li>
       <li>Fatale Verwechslung von <strong>Inhalt</strong> und <strong>Befehl</strong></li>
     </ul>
-    <div class="hint-box">Die Anwendung schmiedet die Waffen für ihre eigene Zerstörung selbst.</div>
+    <div class="hint-box">Die Anwendung schmiedet die Falle für ihre eigene Zerstörung selbst.</div>
   </div>
 </div>
 
@@ -557,7 +556,7 @@ body::-webkit-scrollbar {
 <div class="slide">
   <div class="slide-content">
     <h2 class="slide-title danger">Der vulnerable Code</h2>
-    <p class="slide-text">String-Konkatenation aus der Hölle:</p>
+    <p class="slide-text">Bsp:</p>
     <div class="code-block danger">
 <span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = '<span class="inj"> + $_POST['user'] + </span>' <span class="kw">AND</span> password = ...
     </div>
@@ -635,7 +634,7 @@ body::-webkit-scrollbar {
 <!-- Slide 8: Automatisierung (Jonas) -->
 <div class="slide">
   <div class="slide-content">
-    <h2 class="slide-title danger">Automatisierung & UNION</h2>
+    <h2 class="slide-title danger">UNION & Automatisierung </h2>
     <p class="slide-text"><strong>4. UNION Based SQLi:</strong> Kombiniert eingeschleuste Abfrage mit der originalen.</p>
     
     <div class="code-block danger" style="font-size: 20px; padding: 10px; margin: 10px 0; line-height: 1.5;">
