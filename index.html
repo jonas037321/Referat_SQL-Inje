@@ -49,7 +49,7 @@ body {
   background: var(--bg);
   color: var(--green);
   font-family: 'Share Tech Mono', 'Courier New', monospace;
-  font-size: 16px;
+  font-size: 24px;
   min-height: 100vh;
   /* Scrollbar verstecken */
   -ms-overflow-style: none;
@@ -135,7 +135,7 @@ body::-webkit-scrollbar {
 
 .slide-title {
   font-family: 'VT323', monospace;
-  font-size: 48px;
+  font-size: 64px;
   letter-spacing: 3px;
   color: var(--green);
   text-shadow: 0 0 15px var(--green-glow);
@@ -146,14 +146,14 @@ body::-webkit-scrollbar {
 .slide-title.danger { color: var(--red); text-shadow: 0 0 15px var(--red-glow); }
 
 .slide-subtitle {
-  font-size: 18px;
+  font-size: 26px;
   color: var(--text-mid);
   margin-bottom: 40px;
   line-height: 1.8;
 }
 
 .slide-text {
-  font-size: 16px;
+  font-size: 24px;
   color: var(--text-mid);
   line-height: 2;
   margin-bottom: 20px;
@@ -169,7 +169,7 @@ body::-webkit-scrollbar {
 .slide-list {
   list-style: none;
   margin: 20px 0;
-  font-size: 16px;
+  font-size: 24px;
   color: var(--text-mid);
 }
 
@@ -191,10 +191,10 @@ body::-webkit-scrollbar {
   background: #020902;
   border: 1px solid var(--border);
   border-radius: 3px;
-  padding: 16px;
+  padding: 20px;
   margin: 20px 0;
   font-family: 'Share Tech Mono', monospace;
-  font-size: 13px;
+  font-size: 20px;
   line-height: 1.8;
   overflow-x: auto;
   color: var(--green);
@@ -247,9 +247,9 @@ body::-webkit-scrollbar {
 
 .demo-title {
   font-family: 'VT323', monospace;
-  font-size: 18px;
+  font-size: 32px;
   color: var(--green);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   text-transform: uppercase;
   letter-spacing: 2px;
 }
@@ -326,10 +326,10 @@ body::-webkit-scrollbar {
 .query-display {
   background: #020902;
   border: 1px solid var(--border);
-  padding: 12px;
+  padding: 16px;
   border-radius: 3px;
-  margin: 12px 0;
-  font-size: 12px;
+  margin: 16px 0;
+  font-size: 18px;
   line-height: 1.8;
   word-break: break-all;
   min-height: 60px;
@@ -359,13 +359,13 @@ body::-webkit-scrollbar {
 }
 
 .hint-box {
-  margin-top: 16px;
-  padding: 12px;
+  margin-top: 20px;
+  padding: 16px;
   background: rgba(255, 214, 0, 0.08);
   border: 1px solid rgba(255, 214, 0, 0.3);
   border-radius: 3px;
   color: var(--yellow);
-  font-size: 13px;
+  font-size: 22px;
   line-height: 1.8;
 }
 
@@ -378,11 +378,12 @@ body::-webkit-scrollbar {
 }
 
 .panel-title {
-  font-size: 12px;
+  font-size: 24px;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  font-weight: bold;
 }
 
 .slide-footer {
@@ -574,7 +575,7 @@ body::-webkit-scrollbar {
       </div>
       <button class="btn btn-danger" onclick="injectAdmin1()">Injection: admin'--</button>
       <button class="btn" onclick="attemptLogin1()">LOGIN VERSUCHEN</button>
-      <div class="query-display" id="demo1-query" style="font-size: 14px;"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = <span class="str">''</span> <span class="kw">AND</span> password = <span class="str">''</span></div>
+      <div class="query-display" id="demo1-query" style="font-size: 18px;"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = <span class="str">''</span> <span class="kw">AND</span> password = <span class="str">''</span></div>
       <div class="login-result" id="demo1-result" style="padding: 8px;"></div>
     </div>
   </div>
@@ -599,7 +600,7 @@ body::-webkit-scrollbar {
       </div>
       <button class="btn btn-danger" onclick="injectClassic1b()">Injection: ' OR '1'='1' --</button>
       <button class="btn" onclick="attemptLogin1b()">LOGIN VERSUCHEN</button>
-      <div class="query-display" id="demo1b-query" style="font-size: 14px;"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = <span class="str">''</span> <span class="kw">AND</span> password = <span class="str">''</span></div>
+      <div class="query-display" id="demo1b-query" style="font-size: 18px;"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = <span class="str">''</span> <span class="kw">AND</span> password = <span class="str">''</span></div>
       <div class="login-result" id="demo1b-result" style="padding: 8px;"></div>
     </div>
   </div>
@@ -637,7 +638,7 @@ body::-webkit-scrollbar {
     <h2 class="slide-title danger">Automatisierung & UNION</h2>
     <p class="slide-text"><strong>4. UNION Based SQLi:</strong> Kombiniert eingeschleuste Abfrage mit der originalen.</p>
     
-    <div class="code-block danger" style="font-size: 14px; padding: 10px; margin: 10px 0; line-height: 1.5;">
+    <div class="code-block danger" style="font-size: 20px; padding: 10px; margin: 10px 0; line-height: 1.5;">
       <span class="cmt">// 1. Original:</span> <span class="kw">SELECT</span> name, preis <span class="kw">FROM</span> produkte <span class="kw">WHERE</span> id = '<span class="inj">1</span>'<br>
       <span class="cmt">// 2. Payload:</span> &nbsp;<span class="inj">1' UNION SELECT user, pass FROM users --</span><br>
       <span class="cmt">// 3. Resultat:</span> <span class="kw">SELECT</span> name, preis <span class="kw">FROM</span> produkte <span class="kw">WHERE</span> id = '<span class="inj">1' UNION SELECT user, pass FROM users --</span>'
