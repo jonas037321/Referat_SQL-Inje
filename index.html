@@ -405,6 +405,56 @@ body {
   .slide-subtitle { font-size: 14px; }
   .slide.title-slide .slide-title { font-size: 48px; }
 }
+/* SYSTEM DASHBOARD */
+.sys-dashboard {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--bg);
+  z-index: 2000;
+  padding: 40px;
+  flex-direction: column;
+  background-image: repeating-linear-gradient(0deg, rgba(0,255,65,0.03) 2px, transparent 2px);
+}
+.sys-dashboard.active {
+  display: flex !important;
+}
+.sys-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--border-bright);
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+}
+.sys-title {
+  font-family: 'VT323', monospace;
+  font-size: 36px;
+  color: var(--yellow);
+  text-shadow: 0 0 15px var(--yellow);
+}
+.sys-content {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 30px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+  font-size: 18px;
+}
+.sys-data {
+  margin-top: 30px;
+  width: 100%;
+  border-collapse: collapse;
+}
+.sys-data th, .sys-data td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.sys-data th {
+  color: var(--cyan);
+}
 </style>
 </head>
 <body>
@@ -671,12 +721,74 @@ $result = mysqli_query($conn, $query);
 
 </div>
 
+<!-- DASHBOARD OVERLAY FOR SUCCESSFUL LOGIN -->
+<div class="sys-dashboard" id="login-dashboard">
+  <div class="sys-header">
+    <div class="sys-title">SYSTEM DASHBOARD // <span id="dash-user" style="color: var(--cyan);">GUEST</span></div>
+    <button class="nav-btn" onclick="logout()" style="font-size: 16px;">← LOGOUT / ZURÜCK</button>
+  </div>
+  <div class="sys-content">
+    
+    <!-- ADMIN VIEW -->
+    <div id="admin-view" style="display: none;">
+      <h2 class="slide-title danger" style="font-size: 32px; margin-bottom: 10px;">Willkommen, Administrator!</h2>
+      <p style="color: var(--red);">Die Authentifizierung war erfolgreich. Sie haben nun vollen Systemzugriff.</p>
+      
+      <div class="two-col" style="margin-top: 30px;">
+        <div class="col">
+          <h3 style="color: var(--cyan); font-family: 'VT323', monospace; font-size: 24px;">[ SERVER-STATISTIK ]</h3>
+          <table class="sys-data" style="margin-top: 10px;">
+            <tr><th>CPU-LAST</th><td>94% (Kritisch)</td></tr>
+            <tr><th>ARBEITSSPEICHER</th><td>48GB / 64GB</td></tr>
+            <tr><th>SYSTEM-UPTIME</th><td>412 Tage, 5 Stunden</td></tr>
+            <tr><th>LETZTES BACKUP</th><td>Fehlgeschlagen</td></tr>
+          </table>
+        </div>
+        <div class="col">
+          <h3 style="color: var(--red); font-family: 'VT323', monospace; font-size: 24px;">[ GEHEIME KUNDENDATEN ]</h3>
+          <table class="sys-data" style="margin-top: 10px;">
+            <tr><th>KREDITKARTEN</th><th>LIMIT</th></tr>
+            <tr><td>4532 **** **** 9012</td><td>€ 15.000</td></tr>
+            <tr><td>5551 **** **** 4492</td><td>€ 50.000</td></tr>
+            <tr><td>4239 **** **** 1024</td><td>Unbegrenzt</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <h3 style="color: var(--yellow); margin-top: 40px; font-family: 'VT323', monospace; font-size: 24px;">[ ALLE SYSTEM-BENUTZER (inkl. Passwörter!) ]</h3>
+      <table class="sys-data" id="admin-users-table">
+        <tr><th>ID</th><th>USERNAME</th><th>PASSWORT (Klartext)</th><th>ROLLE</th></tr>
+      </table>
+    </div>
+
+    <!-- USER VIEW -->
+    <div id="user-view" style="display: none;">
+      <h2 class="slide-title" style="font-size: 32px; margin-bottom: 10px;">Willkommen im Kundenportal!</h2>
+      <p style="color: var(--text-mid);">Ihre Standard-Benutzeransicht. Zugriff auf sensible Daten verweigert.</p>
+
+      <h3 style="color: var(--cyan); margin-top: 40px; font-family: 'VT323', monospace; font-size: 24px;">[ MEINE PRODUKTE ]</h3>
+      <table class="sys-data">
+        <tr><th>PRODUKT</th><th>STATUS</th><th>PREIS</th></tr>
+        <tr><td>Gaming Laptop X200</td><td>Versandt</td><td>€ 1.499,00</td></tr>
+        <tr><td>Smartwatch Pro</td><td>Zustellung heute</td><td>€ 249,99</td></tr>
+        <tr><td>Premium Kaffeevollautomat</td><td>In Bearbeitung</td><td>€ 599,50</td></tr>
+      </table>
+
+      <div class="hint-box" style="margin-top: 30px;">
+        💡 Sie sehen hier nur Ihre eigenen Produkte. Um alle Daten (wie Passwörter und Kreditkarten) der anderen User zu sehen, müssten Sie "Admin" sein – z.B. durch eine SQL Injection!
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════════════════
 // GLOBALE VARIABLEN
 // ══════════════════════════════════════════════════════════
 let currentSlide = 1;
 let totalSlides = 0;
+let isDashboardOpen = false;
 
 const DB_USERS = [
   { id: 1, username: 'admin', password: 'SuperGeheim123!', role: 'admin' },
@@ -688,6 +800,44 @@ const DB_USERS = [
 // ══════════════════════════════════════════════════════════
 // SLIDE NAVIGATION FUNCTIONS
 // ══════════════════════════════════════════════════════════
+function showDashboard(username, role) {
+  const dash = document.getElementById('login-dashboard');
+  const dashUser = document.getElementById('dash-user');
+  if (dash && dashUser) {
+    dashUser.textContent = username;
+    dash.classList.add('active');
+    isDashboardOpen = true;
+
+    // View Switching
+    const adminView = document.getElementById('admin-view');
+    const userView = document.getElementById('user-view');
+    if (role === 'admin' || role === 'superuser' || role === 'injected') {
+      adminView.style.display = 'block';
+      userView.style.display = 'none';
+
+      // Dynamically populate admin table
+      const table = document.getElementById('admin-users-table');
+      if (table) {
+        table.innerHTML = '<tr><th>ID</th><th>USERNAME</th><th>PASSWORT (Klartext)</th><th>ROLLE</th></tr>';
+        DB_USERS.forEach(u => {
+          table.innerHTML += `<tr><td>${u.id}</td><td>${u.username}</td><td style="color:var(--yellow);">${u.password}</td><td>${u.role.toUpperCase()}</td></tr>`;
+        });
+      }
+    } else {
+      adminView.style.display = 'none';
+      userView.style.display = 'block';
+    }
+  }
+}
+
+function logout() {
+  const dash = document.getElementById('login-dashboard');
+  if (dash) {
+    dash.classList.remove('active');
+    isDashboardOpen = false;
+  }
+}
+
 function goToSlide(n) {
   const slides = document.querySelectorAll('.slide');
   if (n > totalSlides) n = totalSlides;
@@ -774,18 +924,26 @@ function attemptLogin1() {
   
   let success = false;
   let message = '';
+  let loggedInUser = '';
+  let userRole = 'user';
   
   if (userVal.includes("'") && userVal.includes("OR") && userVal.includes("'1'")) {
     success = true;
     message = '🚨 INJECTION ERFOLGREICH! Alle User wurden zurückgegeben (WHERE ist immer TRUE)';
+    loggedInUser = 'ADMIN (INJECTED)';
+    userRole = 'injected';
   } else if (userVal.includes("'") && userVal.includes("--")) {
     success = true;
     message = '🚨 INJECTION ERFOLGREICH! Passwort-Check wurde durch Comment ignoriert.';
+    loggedInUser = 'ADMIN (INJECTED)';
+    userRole = 'injected';
   } else {
     const foundUser = DB_USERS.find(u => u.username === userVal && u.password === passVal);
     if (foundUser) {
       success = true;
       message = `✓ Login erfolgreich als ${foundUser.username}`;
+      loggedInUser = foundUser.username.toUpperCase();
+      userRole = foundUser.role;
     } else {
       message = '✗ Ungültige Anmeldedaten';
     }
@@ -793,6 +951,10 @@ function attemptLogin1() {
   
   result.className = success ? 'login-result success' : 'login-result fail';
   result.textContent = message;
+
+  if (success) {
+    setTimeout(() => showDashboard(loggedInUser, userRole), 600);
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -853,6 +1015,7 @@ function attemptLogin2() {
   } else if (foundUser) {
     result.className = 'login-result success';
     result.textContent = `✓ Login erfolgreich als ${foundUser.username}`;
+    setTimeout(() => showDashboard(foundUser.username.toUpperCase(), foundUser.role), 600);
   } else if (userVal || passVal) {
     result.className = 'login-result fail';
     result.textContent = '✗ Ungültige Anmeldedaten';
@@ -912,8 +1075,14 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Keyboard navigation
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowRight') nextSlide();
-    if (e.key === 'ArrowLeft') previousSlide();
+    if (isDashboardOpen && e.key === 'ArrowLeft') {
+      logout();
+      return;
+    }
+    if (!isDashboardOpen) {
+      if (e.key === 'ArrowRight') nextSlide();
+      if (e.key === 'ArrowLeft') previousSlide();
+    }
   });
 });
 </script>
