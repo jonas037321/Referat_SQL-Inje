@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Injection – Imperien stürzen | Vollständige Präsentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #00ff41;
+  --green-dim: #00c832;
+  --green-glow: #00ff4133;
+  --green-dark: #003d10;
+  --red: #ff2d55;
+  --red-dim: #cc2244;
+  --red-glow: #ff2d5533;
+  --yellow: #ffd600;
+  --cyan: #00e5ff;
+  --bg: #050d05;
+  --bg-panel: #0a180a;
+  --bg-card: #0e200e;
+  --border: #1a3a1a;
+  --border-bright: #2a6a2a;
+  --text-dim: #4a8a4a;
+  --text-mid: #7abf7a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body::before {
+  content: '';
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 2px, transparent 2px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+body {
+  background: var(--bg);
+  color: var(--green);
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  font-size: 16px;
+  min-height: 100vh;
+}
+
+/* ═══════════════════════════════════════════════
+   SLIDE SYSTEM
+   ═══════════════════════════════════════════════ */
+.slide-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.slide {
+  display: none;
+  min-height: 100vh;
+  padding: 40px;
+  flex: 1;
+  background: linear-gradient(135deg, #050d05 0%, #0a180a 100%);
+  border-bottom: 2px solid var(--border-bright);
+}
+
+.slide.active {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ───────────────────────────────────────────── */
+/* Slide Navigation */
+/* ───────────────────────────────────────────── */
+.nav-top {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-panel);
+  border-bottom: 2px solid var(--border-bright);
+  padding: 12px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 0 20px rgba(0,255,65,0.1);
+}
+
+.nav-logo {
+  font-family: 'VT323', monospace;
+  font-size: 24px;
+  color: var(--green);
+  text-shadow: 0 0 10px var(--green);
+  letter-spacing: 2px;
+}
+
+.nav-logo span { color: var(--red); }
+
+.nav-slide-counter {
+  font-size: 13px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.nav-btn {
+  background: var(--green-dark);
+  color: var(--green);
+  border: 1px solid var(--green);
+  padding: 6px 14px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  transition: all 0.3s;
+  text-transform: uppercase;
+}
+
+.nav-btn:hover { background: #1a4a1a; box-shadow: 0 0 12px var(--green-glow); }
+.nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ───────────────────────────────────────────── */
+/* Slide Content */
+/* ───────────────────────────────────────────── */
+.slide-content {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.slide-title {
+  font-family: 'VT323', monospace;
+  font-size: 48px;
+  letter-spacing: 3px;
+  color: var(--green);
+  text-shadow: 0 0 15px var(--green-glow);
+  margin-bottom: 30px;
+  text-transform: uppercase;
+}
+
+.slide-title.danger { color: var(--red); text-shadow: 0 0 15px var(--red-glow); }
+
+.slide-subtitle {
+  font-size: 18px;
+  color: var(--text-mid);
+  margin-bottom: 40px;
+  line-height: 1.8;
+}
+
+.slide-text {
+  font-size: 16px;
+  color: var(--text-mid);
+  line-height: 2;
+  margin-bottom: 20px;
+}
+
+.slide-text code {
+  background: rgba(0,255,65,0.1);
+  padding: 2px 6px;
+  border-radius: 2px;
+  color: var(--green);
+}
+
+.slide-list {
+  list-style: none;
+  margin: 20px 0;
+  font-size: 16px;
+  color: var(--text-mid);
+}
+
+.slide-list li {
+  margin-bottom: 16px;
+  padding-left: 30px;
+  position: relative;
+  line-height: 1.8;
+}
+
+.slide-list li::before {
+  content: '▶';
+  position: absolute;
+  left: 0;
+  color: var(--green);
+}
+
+.code-block {
+  background: #020902;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 16px;
+  margin: 20px 0;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-x: auto;
+  color: var(--green);
+}
+
+.code-block.danger {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.code-block .kw { color: #569cd6; }
+.code-block .str { color: #ce9178; }
+.code-block .inj { color: var(--red); font-weight: bold; }
+.code-block .cmt { color: var(--text-dim); }
+
+/* Two-column layout */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin: 30px 0;
+}
+
+@media (max-width: 1000px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.col-title {
+  font-family: 'VT323', monospace;
+  font-size: 22px;
+  color: var(--green-dim);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  letter-spacing: 2px;
+}
+
+/* ───────────────────────────────────────────── */
+/* Demo Section */
+/* ───────────────────────────────────────────── */
+.demo-container {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-bright);
+  border-radius: 4px;
+  padding: 24px;
+  margin: 30px 0;
+  box-shadow: 0 0 18px var(--green-glow);
+}
+
+.demo-title {
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  color: var(--green);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border-bright);
+  color: var(--green);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: 3px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.form-input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 12px var(--green-glow);
+}
+
+.form-input.injected {
+  border-color: var(--red);
+  color: var(--red);
+  box-shadow: 0 0 12px var(--red-glow);
+}
+
+.btn {
+  padding: 10px 16px;
+  background: var(--green-dark);
+  color: var(--green);
+  border: 1px solid var(--green);
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.3s;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+.btn:hover {
+  background: #1a4a1a;
+  box-shadow: 0 0 12px var(--green-glow);
+}
+
+.btn-danger {
+  background: #1a0008;
+  color: var(--red);
+  border: 1px solid var(--red);
+}
+
+.btn-danger:hover {
+  background: #2a0010;
+  box-shadow: 0 0 12px var(--red-glow);
+}
+
+.query-display {
+  background: #020902;
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 3px;
+  margin: 12px 0;
+  font-size: 12px;
+  line-height: 1.8;
+  word-break: break-all;
+  min-height: 60px;
+}
+
+.login-result {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 3px;
+  font-size: 13px;
+  display: none;
+  border: 1px solid var(--border-bright);
+}
+
+.login-result.success {
+  display: block;
+  background: rgba(255, 45, 85, 0.15);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.login-result.fail {
+  display: block;
+  background: rgba(0, 255, 65, 0.06);
+  border-color: var(--border-bright);
+  color: var(--text-mid);
+}
+
+.hint-box {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(255, 214, 0, 0.08);
+  border: 1px solid rgba(255, 214, 0, 0.3);
+  border-radius: 3px;
+  color: var(--yellow);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: 3px;
+  padding: 14px;
+  margin: 12px 0;
+}
+
+.panel-title {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.db-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.db-table th {
+  background: var(--bg);
+  color: var(--text-dim);
+  padding: 6px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.db-table td {
+  padding: 6px;
+  border-bottom: 1px solid rgba(26,58,26,0.5);
+  color: var(--text-mid);
+}
+
+.db-table tr:hover td { background: rgba(0,255,65,0.03); }
+
+.db-table td.highlight {
+  color: var(--red);
+  background: rgba(255,45,85,0.1);
+}
+
+.badge {
+  display: inline-block;
+  background: var(--red);
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-left: 12px;
+}
+
+/* ═══════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════ */
+.slide-footer {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-dim);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+
+/* ═══════════════════════════════════════════════
+   SPECIAL SLIDE STYLES
+   ═══════════════════════════════════════════════ */
+.slide.title-slide {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.slide.title-slide .slide-title {
+  font-size: 72px;
+  margin-bottom: 20px;
+}
+
+.slide.title-slide .slide-subtitle {
+  font-size: 24px;
+}
+
+.highlight-red { color: var(--red); text-shadow: 0 0 8px var(--red); }
+.highlight-yellow { color: var(--yellow); text-shadow: 0 0 6px var(--yellow); }
+.highlight-cyan { color: var(--cyan); text-shadow: 0 0 6px var(--cyan); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-top { padding: 12px 20px; }
+  .slide { padding: 24px; }
+  .slide-title { font-size: 36px; }
+  .slide-subtitle { font-size: 14px; }
+  .slide.title-slide .slide-title { font-size: 48px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<div class="nav-top">
+  <div class="nav-logo">SQL_<span>INJ</span>ECT</div>
+  <div class="nav-slide-counter"><span id="currentSlide">1</span> / <span id="totalSlides">15</span></div>
+  <div class="nav-buttons">
+    <button class="nav-btn" id="prevBtn" onclick="previousSlide()">← Zurück</button>
+    <button class="nav-btn" id="nextBtn" onclick="nextSlide()">Weiter →</button>
+  </div>
+</div>
+
+<div class="slide-wrapper">
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 1: TITLE SLIDE
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide active title-slide">
+  <div class="slide-content">
+    <h1 class="slide-title danger">SQL INJECTION</h1>
+    <p class="slide-subtitle"><span class="highlight-red">Imperien stürzen</span></p>
+    <p class="slide-subtitle">Eine technische Präsentation über Web-Security</p>
+    <div class="slide-footer">
+      HTL Wirtschaftsinformatik • Websolutions Zeindl
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 2: WAS IST SQL INJECTION?
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title">Was ist SQL Injection?</h2>
+    
+    <p class="slide-text">SQL Injection (SQLi) ist eine der <span class="highlight-red">gefährlichsten</span> Web-Sicherheitslücken. Angreifer nutzen sie, um:</p>
+    
+    <ul class="slide-list">
+      <li>Unberechtigt auf Datenbanken zuzugreifen</li>
+      <li>Sensible Daten zu stehlen (Passwörter, Kreditkarten, Personendaten)</li>
+      <li>Daten zu manipulieren oder zu löschen</li>
+      <li>Administratorzugriff zu erlangen</li>
+      <li>Malware einzuschleusen</li>
+    </ul>
+
+    <div class="hint-box">
+      <strong>OWASP Top 10:</strong> SQL Injection ist die #1 Web-Sicherheitslücke seit Jahren!
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 3: DAS VULNERABLE LOGIN-FORMULAR
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title danger">Das verwundbare Login</h2>
+    
+    <p class="slide-text">Typischer PHP-Code mit String-Konkatenation:</p>
+    
+    <div class="code-block danger">
+$user = $_POST['username'];
+$pass = $_POST['password'];
+<span class="inj">$query = "SELECT * FROM users WHERE username = '$user' AND password = '$pass'";</span>
+$result = mysqli_query($conn, $query);
+    </div>
+
+    <p class="slide-text">Das Problem: <span class="highlight-red">Benutzereingaben werden direkt in SQL eingebunden!</span></p>
+
+    <div class="hint-box">
+      💡 Wenn der Benutzer ein <code>'</code> (Hochkomma) eingibt, kann die SQL-Struktur zerstört werden!
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 4: DAS KRITISCHE HOCHKOMMA
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title danger">Das Hochkomma – Der Schlüssel</h2>
+    
+    <div class="two-col">
+      <div class="col">
+        <div class="col-title">Erwartete Query:</div>
+        <div class="code-block">
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> users
+<span class="kw">WHERE</span> username = <span class="str">'max'</span>
+<span class="kw">AND</span> password = <span class="str">'pass123'</span>
+        </div>
+      </div>
+      <div class="col">
+        <div class="col-title">Mit Injection (Username = ' OR '1'='1):</div>
+        <div class="code-block danger">
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> users
+<span class="kw">WHERE</span> username = <span class="inj">''</span> <span class="kw">OR</span> <span class="inj">'1'='1</span>
+<span class="kw">AND</span> password = <span class="str">'pass123'</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="slide-text"><strong>Ergebnis:</strong> Die WHERE-Bedingung ist <span class="highlight-red">IMMER WAHR</span> → Alle User werden zurückgegeben!</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 5: DEMO – Klassische SQL Injection
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title">Demo: Klassische SQL Injection</h2>
+    
+    <div class="demo-container">
+      <div class="demo-title">Login-Formular (VULNERABLE MODE)</div>
+      
+      <div class="form-group">
+        <label class="form-label">Benutzername:</label>
+        <input type="text" class="form-input" id="demo1-user" placeholder="z.B. admin" oninput="updateDemo1Query()">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Passwort:</label>
+        <input type="text" class="form-input" id="demo1-pass" placeholder="z.B. password" oninput="updateDemo1Query()">
+      </div>
+
+      <button class="btn btn-danger" onclick="injectClassic1()">Injection: ' OR '1'='1' --</button>
+      <button class="btn btn-danger" onclick="injectAdmin1()">Injection: admin'--</button>
+      <button class="btn" onclick="attemptLogin1()">LOGIN VERSUCHEN</button>
+
+      <div class="query-display" id="demo1-query">
+        <span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = <span class="str">''</span> <span class="kw">AND</span> password = <span class="str">''</span>
+      </div>
+
+      <div class="login-result" id="demo1-result"></div>
+
+      <div class="hint-box">
+        💡 Probiere die Injection-Buttons aus oder gib selbst <code>' OR '1'='1' --</code> ein!
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 6: ANDERE INJECTION-TECHNIKEN
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title danger">Verschiedene Injection-Varianten</h2>
+    
+    <ul class="slide-list">
+      <li><strong>' OR '1'='1' --</strong><br>
+        Klassische Methode: Macht die WHERE-Bedingung IMMER wahr</li>
+      
+      <li><strong>admin'--</strong><br>
+        Comment-Bypass: Ignoriert das Passwort durch SQL-Kommentar</li>
+      
+      <li><strong>'; DROP TABLE users; --</strong><br>
+        Destruktiv: Löscht ganze Tabellen</li>
+      
+      <li><strong>UNION SELECT ...</strong><br>
+        Daten extrahieren: Holt verborgene Datenbankdaten</li>
+      
+      <li><strong>SLEEP() / TIME-BASED BLIND SQLi</strong><br>
+        Blind Injection: Exfiltration durch Zeitmessungen</li>
+    </ul>
+
+    <div class="hint-box">
+      ⚠️ Diese sind nur einige Beispiele. Die Möglichkeiten sind nahezu unbegrenzt!
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 7: REAL-WORLD BEISPIELE
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title danger">Historische Fälle</h2>
+    
+    <div class="panel">
+      <div class="panel-title">Sony Pictures Entertainment (2011)</div>
+      <p style="color: var(--text-mid); margin-top: 8px;">Über 1 Million Kundendaten durch SQL Injection gestohlen. Verlust: 100+ Millionen Dollar.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">TalkTalk (2015)</div>
+      <p style="color: var(--text-mid); margin-top: 8px;">4 Millionen Kunden betroffen. Angreifer nutzten SQL Injection.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Yahoo (2013)</div>
+      <p style="color: var(--text-mid); margin-top: 8px;">3 Milliarden Konten kompromittiert (teilweise durch SQLi).</p>
+    </div>
+
+    <p class="slide-text" style="margin-top: 24px;">
+      <span class="highlight-red">SQL Injection ist nicht theoretisch – es passiert JEDEN TAG in der realen Welt!</span>
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 8: BLIND SQL INJECTION
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title danger">Blind SQL Injection</h2>
+    
+    <p class="slide-text">Was wenn die Datenbank keine Fehler anzeigt?</p>
+
+    <ul class="slide-list">
+      <li><strong>Time-Based:</strong> Angreifer sendet Queries die bei bestimmten Bedingungen lange dauern</li>
+      <li><strong>Boolean-Based:</strong> Unterschiedliche Responses (wahr/falsch)</li>
+      <li><strong>Exfiltration:</strong> Daten werden Bit-für-Bit durch Messungen extrahiert</li>
+    </ul>
+
+    <div class="code-block">
+username = <span class="str">'admin' AND SLEEP(5) -- </span>
+<span class="cmt">// Wenn admin existiert → 5 Sekunden Verzögerung!</span>
+    </div>
+
+    <p class="slide-text">Dadurch können Angreifer <span class="highlight-red">jedes Passwort zeichenweise erraten</span>!</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 9: DEMO – BLIND SQL INJECTION
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title">Demo: Blind SQL Injection (Timing)</h2>
+    
+    <div class="demo-container">
+      <div class="demo-title">Zeitbasierte Datenexfiltration</div>
+      
+      <p class="slide-text">Der Server antwortet langsam, wenn die Bedingung erfüllt ist. So können wir Daten extrahieren:</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 20px 0;">
+        <button class="btn btn-danger" onclick="runBlindSQLi(1)">
+          Test 1<br><span style="font-size: 11px;">(admin existiert?)</span>
+        </button>
+        <button class="btn btn-danger" onclick="runBlindSQLi(2)">
+          Test 2<br><span style="font-size: 11px;">(Passwort startet mit 'S'?)</span>
+        </button>
+        <button class="btn btn-danger" onclick="runBlindSQLi(3)">
+          Test 3<br><span style="font-size: 11px;">(Admin ist Superuser?)</span>
+        </button>
+      </div>
+
+      <div id="blind-timing" style="background: var(--bg-card); border: 1px solid var(--border); padding: 12px; border-radius: 3px; margin: 12px 0;">
+        <div style="font-size: 13px; color: var(--text-dim);">ANTWORTZEIT:</div>
+        <div style="font-size: 24px; color: var(--green); margin-top: 8px;">
+          <span id="blind-value">-</span> ms <span id="blind-status" style="font-size: 14px; margin-left: 12px;"></span>
+        </div>
+      </div>
+
+      <div class="hint-box">
+        ⏱️ Wenn die Response &gt; 2000ms dauert, ist die Bedingung erfüllt!
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 10: UNION-BASED INJECTION
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title danger">UNION-Based SQL Injection</h2>
+    
+    <p class="slide-text">Mit <code>UNION SELECT</code> können mehrere Tabellen kombiniert werden:</p>
+
+    <div class="code-block danger">
+<span class="cmt">// Injection:</span>
+username = <span class="str">' UNION SELECT id, username, password FROM users -- </span>
+
+<span class="cmt">// Resultierende Query:</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> users 
+<span class="kw">WHERE</span> username = <span class="inj">'' UNION SELECT id, username, password FROM users --</span>
+<span class="kw">AND</span> password = <span class="str">''</span>
+    </div>
+
+    <p class="slide-text">Angreifer sieht nun <span class="highlight-red">ALLE Benutzerdaten</span> inklusive Passwörter!</p>
+
+    <div class="hint-box">
+      💡 UNION ist besonders mächtig, weil Daten direkt im Response sichtbar sind.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 11: DIE LÖSUNG – PREPARED STATEMENTS
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title">Die Lösung: Prepared Statements</h2>
+    
+    <p class="slide-text">Prepared Statements trennen <span class="highlight-green">Code</span> von <span class="highlight-green">Daten</span>:</p>
+
+    <div class="code-block">
+<span class="cmt">// SICHER: Prepared Statement (PHP mysqli)</span>
+$stmt = $conn->prepare(<span class="str">"SELECT * FROM users WHERE username = ? AND password = ?"</span>);
+$stmt->bind_param(<span class="str">"ss"</span>, $user, $pass);
+$stmt->execute();
+$result = $stmt->get_result();
+    </div>
+
+    <ul class="slide-list">
+      <li>Das <code>?</code> wird als <strong>Platzhalter</strong> behandelt</li>
+      <li>Benutzereingaben werden <strong>IMMER als Daten</strong> interpretiert</li>
+      <li>SQL-Metazeichen wie <code>'</code> werden automatisch <strong>escaped</strong></li>
+      <li>Injection ist <strong>unmöglich</strong></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 12: DEMO – SECURE MODE
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title">Demo: Prepared Statements (SICHER)</h2>
+    
+    <div class="demo-container">
+      <div class="demo-title">Login mit Prepared Statements</div>
+      
+      <div class="form-group">
+        <label class="form-label">Benutzername:</label>
+        <input type="text" class="form-input" id="demo2-user" placeholder="z.B. admin" oninput="updateDemo2Query()">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Passwort:</label>
+        <input type="text" class="form-input" id="demo2-pass" placeholder="z.B. password" oninput="updateDemo2Query()">
+      </div>
+
+      <button class="btn btn-danger" onclick="injectClassic2()">Versuchen: ' OR '1'='1' --</button>
+      <button class="btn btn-danger" onclick="injectAdmin2()">Versuchen: admin'--</button>
+      <button class="btn" onclick="attemptLogin2()">LOGIN VERSUCHEN</button>
+
+      <div class="query-display" id="demo2-query">
+        <span class="kw">PREPARE</span> <span class="str">"SELECT * FROM users WHERE username = ? AND password = ?"</span>
+        <br><span class="kw">BIND</span> <span style="color: var(--cyan);">param1, param2</span>
+      </div>
+
+      <div class="login-result" id="demo2-result"></div>
+
+      <div class="hint-box">
+        ✅ Hier funktioniert die Injection <span class="highlight-green">NICHT</span> – egal was du eingibst!
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 13: BEST PRACTICES
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title">Best Practices für sichere Applikationen</h2>
+    
+    <ul class="slide-list">
+      <li><strong>Prepared Statements / Parameterized Queries verwenden</strong> (immer!)</li>
+      <li><strong>Input Validation:</strong> Daten validieren und filtern</li>
+      <li><strong>Least Privilege:</strong> DB-User mit minimalen Rechten</li>
+      <li><strong>Error Handling:</strong> Keine SQL-Fehler an User anzeigen</li>
+      <li><strong>Web Application Firewall (WAF):</strong> Zusätzliche Schutzebene</li>
+      <li><strong>Regular Updates:</strong> Framework und Dependencies aktuell halten</li>
+      <li><strong>Security Testing:</strong> Penetration Tests durchführen</li>
+      <li><strong>Code Review:</strong> Andere Entwickler Code überprüfen lassen</li>
+    </ul>
+
+    <div class="hint-box">
+      🛡️ <strong>Goldene Regel:</strong> Prepared Statements sind das Mittel #1!
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 14: TOOLS & RESSOURCEN
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title">Tools zur Erkennung & Testing</h2>
+    
+    <div class="panel">
+      <div class="panel-title">Penetration Testing Tools</div>
+      <ul style="margin-top: 8px; color: var(--text-mid);">
+        <li>🔧 <strong>SQLMap:</strong> Automatisiertes SQL Injection Testing</li>
+        <li>🔧 <strong>Burp Suite:</strong> Web Security Testing (Professional)</li>
+        <li>🔧 <strong>OWASP ZAP:</strong> Kostenloser Web App Scanner</li>
+        <li>🔧 <strong>Acunetix:</strong> Automatisierter Web-Vulnerability Scanner</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Lern-Ressourcen</div>
+      <ul style="margin-top: 8px; color: var(--text-mid);">
+        <li>📚 <strong>OWASP Testing Guide:</strong> Umfassender Security-Leitfaden</li>
+        <li>📚 <strong>PortSwigger Web Security Academy:</strong> Interaktive Trainings</li>
+        <li>📚 <strong>HackTheBox / TryHackMe:</strong> Praktische Challenge-Plattformen</li>
+        <li>📚 <strong>CWE-89 (SQL Injection):</strong> Offizielle Dokumentation</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOLIE 15: ZUSAMMENFASSUNG & FRAGEN
+     ═══════════════════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-content">
+    <h2 class="slide-title">Zusammenfassung</h2>
+    
+    <ul class="slide-list">
+      <li>✅ SQL Injection ist eine kritische Sicherheitslücke (OWASP #1)</li>
+      <li>✅ Sie entsteht durch String-Konkatenation von Benutzereingaben</li>
+      <li>✅ Angreifer können Datenbanken kompromittieren, löschen oder stehlen</li>
+      <li>✅ <span class="highlight-green">Prepared Statements sind die Lösung!</span></li>
+      <li>✅ Zusätzliche Maßnahmen: Input Validation, Error Handling, WAF</li>
+      <li>✅ Regelmäßiges Security Testing ist essentiell</li>
+    </ul>
+
+    <p class="slide-text" style="margin-top: 40px; text-align: center;">
+      <span class="highlight-green" style="font-size: 20px;">FRAGEN?</span>
+    </p>
+  </div>
+</div>
+
+</div><!-- /.slide-wrapper -->
+
+<script>
+// ══════════════════════════════════════════════════════════
+// SLIDE NAVIGATION
+// ══════════════════════════════════════════════════════════
+
+let currentSlide = 1;
+const totalSlides = document.querySelectorAll('.slide').length;
+document.getElementById('totalSlides').textContent = totalSlides;
+
+function goToSlide(n) {
+  const slides = document.querySelectorAll('.slide');
+  
+  if (n > totalSlides) currentSlide = totalSlides;
+  if (n < 1) currentSlide = 1;
+  
+  slides.forEach(slide => slide.classList.remove('active'));
+  slides[currentSlide - 1].classList.add('active');
+  
+  document.getElementById('currentSlide').textContent = currentSlide;
+  document.getElementById('prevBtn').disabled = currentSlide === 1;
+  document.getElementById('nextBtn').disabled = currentSlide === totalSlides;
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextSlide() {
+  currentSlide++;
+  goToSlide(currentSlide);
+}
+
+function previousSlide() {
+  currentSlide--;
+  goToSlide(currentSlide);
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') nextSlide();
+  if (e.key === 'ArrowLeft') previousSlide();
+});
+
+goToSlide(currentSlide);
+
+// ══════════════════════════════════════════════════════════
+// DATABASE SIMULATION
+// ══════════════════════════════════════════════════════════
+
+const DB_USERS = [
+  { id: 1, username: 'admin', password: 'SuperGeheim123!', role: 'admin' },
+  { id: 2, username: 'max.muster', password: 'pass1234', role: 'user' },
+  { id: 3, username: 'lisa.huber', password: 'tirol2024', role: 'user' },
+  { id: 4, username: 'root', password: 'toor', role: 'superuser' },
+];
+
+// ══════════════════════════════════════════════════════════
+// DEMO 1: VULNERABLE SQL INJECTION
+// ══════════════════════════════════════════════════════════
+
+function updateDemo1Query() {
+  const user = document.getElementById('demo1-user').value;
+  const pass = document.getElementById('demo1-pass').value;
+  const query = document.getElementById('demo1-query');
+  
+  const userEsc = user.replace(/'/g, "\\'");
+  const passEsc = pass.replace(/'/g, "\\'");
+  
+  const hasInjection = /['";--]/.test(user + pass);
+  
+  let html = '<span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> ';
+  html += 'username = <span class="str">' + "'" + (hasInjection ? '<span style="color:var(--red);">' + user + '</span>' : user) + "'" + '</span> ';
+  html += '<span class="kw">AND</span> password = <span class="str">' + "'" + (hasInjection ? '<span style="color:var(--red);">' + pass + '</span>' : pass) + "'" + '</span>';
+  
+  query.innerHTML = html;
+}
+
+function injectClassic1() {
+  document.getElementById('demo1-user').value = "' OR '1'='1' --";
+  document.getElementById('demo1-pass').value = "";
+  updateDemo1Query();
+}
+
+function injectAdmin1() {
+  document.getElementById('demo1-user').value = "admin'--";
+  document.getElementById('demo1-pass').value = "anything";
+  updateDemo1Query();
+}
+
+function attemptLogin1() {
+  const user = document.getElementById('demo1-user').value.trim();
+  const pass = document.getElementById('demo1-pass').value.trim();
+  const result = document.getElementById('demo1-result');
+  
+  let success = false;
+  let message = '';
+  
+  // Check for classic injection
+  if (user.includes("'") && user.includes("OR") && user.includes("'1'")) {
+    success = true;
+    message = '🚨 INJECTION ERFOLGREICH! Alle User wurden zurückgegeben (WHERE ist immer TRUE)';
+  }
+  // Check for comment bypass
+  else if (user.includes("'") && user.includes("--")) {
+    success = true;
+    message = '🚨 INJECTION ERFOLGREICH! Passwort-Check wurde durch Comment ignoriert.';
+  }
+  // Normal login
+  else {
+    const foundUser = DB_USERS.find(u => u.username === user && u.password === pass);
+    if (foundUser) {
+      success = true;
+      message = `✓ Login erfolgreich als ${foundUser.username}`;
+    } else {
+      message = '✗ Ungültige Anmeldedaten';
+    }
+  }
+  
+  result.className = success ? 'login-result success' : 'login-result fail';
+  result.textContent = message;
+}
+
+// ══════════════════════════════════════════════════════════
+// DEMO 2: SECURE PREPARED STATEMENTS
+// ══════════════════════════════════════════════════════════
+
+function updateDemo2Query() {
+  const user = document.getElementById('demo2-user').value;
+  const pass = document.getElementById('demo2-pass').value;
+  const query = document.getElementById('demo2-query');
+  
+  let html = '<span class="kw">PREPARE</span> <span class="str">"SELECT * FROM users WHERE username = ? AND password = ?"</span><br>';
+  html += '<span class="kw">BIND</span> <span style="color: var(--cyan);">["' + (user || 'undefined') + '", "' + (pass || 'undefined') + '"]</span>';
+  
+  query.innerHTML = html;
+}
+
+function injectClassic2() {
+  document.getElementById('demo2-user').value = "' OR '1'='1' --";
+  document.getElementById('demo2-pass').value = "";
+  updateDemo2Query();
+  attemptLogin2();
+}
+
+function injectAdmin2() {
+  document.getElementById('demo2-user').value = "admin'--";
+  document.getElementById('demo2-pass').value = "anything";
+  updateDemo2Query();
+  attemptLogin2();
+}
+
+function attemptLogin2() {
+  const user = document.getElementById('demo2-user').value.trim();
+  const pass = document.getElementById('demo2-pass').value.trim();
+  const result = document.getElementById('demo2-result');
+  
+  // In secure mode, treat input literally (no SQL interpretation)
+  const foundUser = DB_USERS.find(u => u.username === user && u.password === pass);
+  
+  if (user === "' OR '1'='1' --" || user === "admin'--") {
+    result.className = 'login-result fail';
+    result.textContent = '✓ Injection verhindert! Input wird als Literal-String behandelt.';
+  } else if (foundUser) {
+    result.className = 'login-result success';
+    result.textContent = `✓ Login erfolgreich als ${foundUser.username}`;
+  } else if (user || pass) {
+    result.className = 'login-result fail';
+    result.textContent = '✗ Ungültige Anmeldedaten';
+  } else {
+    result.className = 'login-result';
+    result.textContent = '';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// BLIND SQL INJECTION DEMO
+// ══════════════════════════════════════════════════════════
+
+function runBlindSQLi(testNum) {
+  const timingVal = document.getElementById('blind-value');
+  const timingStatus = document.getElementById('blind-status');
+  
+  // Simulate response times
+  const delays = {
+    1: { time: 2500, result: 'JA ✓' },
+    2: { time: 1200, result: 'NEIN ✗' },
+    3: { time: 2500, result: 'JA ✓' }
+  };
+  
+  const data = delays[testNum];
+  
+  timingVal.textContent = '⏳ lädt...';
+  timingStatus.textContent = '';
+  
+  setTimeout(() => {
+    timingVal.textContent = data.time;
+    timingStatus.textContent = `(${data.result})`;
+    
+    if (data.time > 2000) {
+      timingStatus.style.color = 'var(--red)';
+      timingStatus.textContent += ' ⚠️ BEDINGUNG ERFÜLLT';
+    } else {
+      timingStatus.style.color = 'var(--text-dim)';
+    }
+  }, 1000);
+}
+
+// Init
+updateDemo1Query();
+updateDemo2Query();
+</script>
+
+</body>
+</html>
